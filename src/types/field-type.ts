@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb';
 import {IParser} from './parser';
 import {TTypeOrTupleOrCallback} from './utils';
 
-type TAnyParser = IParser<any, any>;
+type TAnyDataMapper = IParser<any, any>;
 
 export type TString = typeof String;
 export type TNumber = typeof Number;
@@ -18,7 +18,7 @@ export type TKnownType = TString | TNumber | TBoolean | TDate | TObjectId;
 /**
  * Типы, которые библиотеке неизвестны, но могут быть ей использованы.
  */
-export type TCustomType = TAnyParser;
+export type TCustomType = TAnyDataMapper;
 
 /**
  * Любой тип, принимаемый библиотекой.

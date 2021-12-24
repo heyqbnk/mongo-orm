@@ -1,4 +1,5 @@
 import {TAnyFieldType, TSupportedType} from './field-type';
+import {IDataMapper} from '../data-mappers';
 
 export interface IFieldMeta {
   /**
@@ -20,7 +21,7 @@ export interface IFieldMeta {
   /**
    * Является ли поле уникальным идентификатором этой модели.
    */
-  isIdentifier: boolean;
+  isPrimary: boolean;
   /**
    * Тип, которым описывается указанное поле.
    */
@@ -31,9 +32,12 @@ export interface IFieldMeta {
  * Информация о поле, где тип уже не является хуком.
  */
 export interface IUnpackedFieldMeta extends Omit<IFieldMeta, 'type'> {
-  type: TSupportedType;
   /**
    * Должно ли это поле быть массивом.
    */
   isArray: boolean;
+  /**
+   * Маппер-данных.
+   */
+  dataMapper: IDataMapper<any, any>;
 }

@@ -1,5 +1,6 @@
 import {ObjectId} from 'bson';
 import {createDataMapper, createTypeBasedDataMapper} from './utils';
+import {TKnownType, TString} from '../types';
 
 export const NumberDataMapper = createTypeBasedDataMapper('number');
 
@@ -26,3 +27,25 @@ export const ObjectIdDataMapper = createDataMapper<ObjectId, ObjectId>(
   },
   value => value,
 );
+
+/**
+ * Кортеж, который определяет для какого известного типа какой дата-маппер
+ * используется.
+ */
+export const knownTypeDataMappersTuple = [
+  [String, StringDataMapper],
+  [Number, NumberDataMapper],
+  [Date, DateDataMapper],
+  [Boolean, BooleanDataMapper],
+  [ObjectId, ObjectIdDataMapper],
+] as const;
+
+type TKnownTypeDataMappersTuple = typeof knownTypeDataMappersTuple;
+
+export type TGetKnownTypeDataMapperTuple<T extends TKnownType> =
+  TKnownTypeDataMappersTuple[0] extends readonly [infer A, infer B]
+    ? A extends T ? [A, B] : never
+    : never;
+
+export type TGetKnownTypeDataMapper<T extends TKnownType> =
+  TGetKnownTypeDataMapperTuple<T>[1];

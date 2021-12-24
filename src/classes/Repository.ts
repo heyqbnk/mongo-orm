@@ -1,62 +1,54 @@
-import {
-  IDocument,
-  IFieldMeta,
-  IUnpackedFieldMeta,
-  TAnySchema,
-  TConstructor,
-} from '../types';
-import {Collection, Db, Filter, FindOptions} from 'mongodb';
+import {IDocument, IUnpackedFieldMeta, TConstructor} from '../types';
+import {Collection, Db, Filter, FindOptions, WithId} from 'mongodb';
 import {ReflectUtils} from './ReflectUtils';
+import {ValueEmptyError} from '../errors/ValueEmptyError';
+import {ArrayExpectedError} from '../errors/ArrayExpectedError';
 
-interface IModel<D extends IDocument> {
+export interface IModel<D extends IDocument> {
 }
 
-type TModelCtr<M extends IModel<any>> = TConstructor<M>;
-type TModelDocument<M extends IModel<any>> = M extends IModel<infer D>
+export type TModelCtr<M extends IModel<any>> = TConstructor<M>;
+type TModelDocument<M> = M extends IModel<infer D>
   ? D : never;
-
-interface IGetFieldsResult {
-  fields: IUnpackedFieldMeta[];
-  identifierField: IUnpackedFieldMeta;
-}
 
 /**
  * Класс, который работает с моделями.
  */
 export class Repository<Model extends IModel<any>> {
   private readonly collection: Collection<TModelDocument<Model>>;
-  private fields: IUnpackedFieldMeta[];
-  private identifierField: IUnpackedFieldMeta;
+  private readonly fields: IUnpackedFieldMeta[];
+  private readonly primaryField: IUnpackedFieldMeta;
 
   constructor(
     private readonly ModelConstructor: TModelCtr<Model>,
     db: Db,
   ) {
-    // Получаем полную информацию о модели.
-    const {
-      identifierField, fields, collection,
-    } = ReflectUtils.collectModelInformation(ModelConstructor);
-
     // Применяем поля, которые в модели объявлены.
     ReflectUtils.applyFields(ModelConstructor);
 
+    // Получаем полную информацию о модели.
+    const {
+      primaryField, fields, collection,
+    } = ReflectUtils.collectModelInformation(ModelConstructor);
     this.collection = db.collection(collection);
     this.fields = fields;
-    this.identifierField = identifierField;
+    this.primaryField = primaryField;
   }
 
   /**
    * Извлекает из полученной сущности значение для поля.
-   * @param json
+   * @param document
    * @param field
    * @private
    */
   private computeFieldValue(
-    json: TAnySchema,
+    document: WithId<TModelDocument<Model>>,
     field: IUnpackedFieldMeta,
   ): unknown {
-    const {type, dbPropertyName, defaultValue, isNullable, isArray} = field;
-    let fieldValue = (json as any)[dbPropertyName];
+    const {
+      dataMapper, dbPropertyName, defaultValue, isNullable, isArray,
+    } = field;
+    let fieldValue = document[dbPropertyName];
 
     // Поле отсутствует, проверяем, допустима ли такая ситуация.
     if (fieldValue === undefined || fieldValue === null) {
@@ -70,20 +62,21 @@ export class Repository<Model extends IModel<any>> {
       }
       // В противном случае выбрасываем ошибку.
       else {
-        // TODO: Ошибку
-        throw new Error('Поле отсутствует');
+        throw new ValueEmptyError({
+          field,
+          document,
+          documentFieldName: dbPropertyName,
+        });
       }
     } else {
       // Если требование массива отличается от фактически полученного типа,
       // то выбрасываем ошибку.
       if (Array.isArray(fieldValue) !== isArray) {
-        // TODO: Ошибку
-        throw new Error('Поле не является массивом');
+        throw new ArrayExpectedError({field, value: fieldValue});
       }
-
       fieldValue = Array.isArray(fieldValue)
-        ? fieldValue.map(parser.parse)
-        : parser.parse(fieldValue);
+        ? fieldValue.map(dataMapper.parse)
+        : dataMapper.parse(fieldValue);
     }
     return fieldValue;
   }
@@ -91,27 +84,23 @@ export class Repository<Model extends IModel<any>> {
   /**
    * Извлекает из сущности поля модели.
    * @private
-   * @param json
+   * @param document
    */
-  private createModel(json: TModelDocument<Model>): Model {
-    const instance = new this.ModelConstructor();
+  private createModel(document: WithId<TModelDocument<Model>>): Model {
+    const instance = new this.ModelConstructor;
 
     // Объявляем скрытое свойство, в которое будет записываться реальный
     // документ.
     Object.defineProperty(instance, '__document', {
-      value: json,
+      value: document,
       writable: false,
       enumerable: true,
       configurable: false,
     });
 
     this.fields.forEach(f => {
-      const {
-        classPropertyName, dbPropertyName, defaultValue, isNullable, isArray,
-        type, isIdentifier,
-      } = f;
-
-      (instance as any)[classPropertyName] = this.computeFieldValue(json, f);
+      (instance as any)[f.classPropertyName] =
+        this.computeFieldValue(document, f);
     });
 
     return instance;

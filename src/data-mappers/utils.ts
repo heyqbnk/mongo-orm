@@ -1,19 +1,17 @@
 import {DataMapper as DecorateDataMapper} from '../decorators';
-import {IDataMapper} from './types';
+import {
+  IDataMapper,
+  TBaseType,
+  TTypeBasedDataMapper,
+  TTypeBasedType,
+} from './types';
 import {ReflectUtils} from '../classes';
-
-interface ITypesMappingMap {
-  string: string;
-  number: number;
-  boolean: boolean;
-}
-
-type TBaseType = 'string' | 'number' | 'boolean';
-
-type TTypeBasedType<T extends TBaseType> = ITypesMappingMap[T];
-
-type TTypeBasedDataMapper<T extends TBaseType> =
-  IDataMapper<TTypeBasedType<T>, TTypeBasedType<T>>;
+import {TKnownType} from '../types';
+import {
+  knownTypeDataMappersTuple,
+  TGetKnownTypeDataMapper,
+  TGetKnownTypeDataMapperTuple,
+} from './known';
 
 /**
  * Создает стандартный парсер для типа, который можно получить через typeof.
@@ -48,4 +46,19 @@ export function createDataMapper<LocalValue, DbValue>(
     static serialize = serialize;
   }
   return DataMapper;
+}
+
+/**
+ * Возвращает дата-мапперр исходя из известного типа.
+ * @param type
+ */
+export function getKnownTypeDataMapper<T extends TKnownType>(
+  type: T
+): TGetKnownTypeDataMapper<T> {
+  const tuple = knownTypeDataMappersTuple.find((t): t is TGetKnownTypeDataMapperTuple<T> => t[0] === type);
+
+  if (tuple === undefined) {
+    throw new Error('Информация о подходящем маппере не найдена.');
+  }
+  return tuple[1];
 }

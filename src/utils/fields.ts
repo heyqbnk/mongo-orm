@@ -6,6 +6,7 @@ import {
 } from '../types';
 import {ObjectId} from 'mongodb';
 import {ReflectUtils} from '../classes';
+import {getKnownTypeDataMapper, IDataMapper} from '../data-mappers';
 
 /**
  * Утверждает, что переданное значение является известным типом поля.
@@ -48,5 +49,11 @@ export function unpackField(field: IFieldMeta): IUnpackedFieldMeta {
       unpackedType = callbackType;
     }
   }
-  return {type: unpackedType, isArray, ...rest};
+  return {
+    dataMapper: isKnownType(unpackedType)
+      ? getKnownTypeDataMapper(unpackedType)
+      : unpackedType,
+    isArray,
+    ...rest,
+  };
 }

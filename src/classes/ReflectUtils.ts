@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 import {IFieldMeta, IUnpackedFieldMeta} from '../types';
 import {unpackField, whileHasParentConstructor} from '../utils';
+import {PropertyAlreadyDefinedError} from '../errors/PropertyAlreadyDefinedError';
+import {PrimaryKeyAlreadyDefinedError} from '../errors/PrimaryKeyAlreadyDefinedError';
+import {ModelNotFoundError} from '../errors/ModelNotFoundError';
+import {EmptyFieldsListError} from '../errors/EnptyFieldsListError';
+import {PrimaryKeyNotDefinedError} from '../errors/PrimaryKeyNotDefinedError';
 
 enum EMetaDataKey {
   /**
@@ -33,7 +38,7 @@ interface IModelInformation {
   /**
    * Поле, являющееся идентификатором.
    */
-  identifierField: IUnpackedFieldMeta;
+  primaryField: IUnpackedFieldMeta;
   /**
    * Список всех полей.
    */
@@ -111,20 +116,27 @@ export class ReflectUtils {
    * @param target
    * @param fieldMeta
    */
-  static addOwnField(target: any, fieldMeta: IFieldMeta) {
+  static addOwnField(target: Function, fieldMeta: IFieldMeta) {
+    // TODO: Проверить defaultValue и isNullable, В дефолт нельзя null если
+    //  IsNullable не true
     const fields = this.getFields(target);
 
     fields.forEach(f => {
       // В случае, если переданное поле - поле-идентификатор, необходимо
       // проверить, было ли ранее добавлено такое же поле.
-      if (f.isIdentifier && fieldMeta.isIdentifier) {
-        throw new Error('В модели уже присутствует поле-идентификатор.');
+      if (f.isPrimary && fieldMeta.isPrimary) {
+        throw new PrimaryKeyAlreadyDefinedError({
+          Model: target,
+          prevField: f,
+          currentField: fieldMeta,
+        });
       }
       // Дубликаты полей запрещены.
       if (f.classPropertyName === fieldMeta.classPropertyName) {
-        throw new Error(
-          `Настройки для классового поля ${f.classPropertyName} уже заданы.`
-        );
+        throw new PropertyAlreadyDefinedError({
+          prevField: f,
+          currentField: fieldMeta,
+        });
       }
     });
     this.set(
@@ -144,7 +156,7 @@ export class ReflectUtils {
     if (isAlreadyApplied) {
       return;
     }
-    const {fields} = this.collectModelInformation(target);
+    const fields = this.getUnpackedFields(target);
 
     fields.forEach(f => {
       // Объявляем геттеры и сеттеры для полей. Они должны ссылаться на поля,
@@ -172,27 +184,31 @@ export class ReflectUtils {
     const collection = this.get(EMetaDataKey.Collection, target);
 
     if (collection === null) {
-      throw new Error('Не удалось получить информацию о коллекции модели.');
+      throw new ModelNotFoundError(target);
     }
     const fields = this.getUnpackedFields(target);
 
     if (fields.length === 0) {
-      throw new Error('В модели отсутствуют поля.');
+      throw new EmptyFieldsListError({Model: target});
     }
-    let identifierField: IUnpackedFieldMeta | undefined;
+    let primaryField: IUnpackedFieldMeta | undefined;
 
     for (const f of fields) {
-      if (f.isIdentifier) {
-        if (identifierField !== undefined) {
-          throw new Error('Было встречено несколько полей-идентификаторов.');
+      if (f.isPrimary) {
+        if (primaryField !== undefined) {
+          throw new PrimaryKeyAlreadyDefinedError({
+            Model: target,
+            prevField: primaryField,
+            currentField: f,
+          });
         }
-        identifierField = f;
+        primaryField = f;
       }
     }
-    if (identifierField === undefined) {
-      throw new Error('Поле-идентификатор не было найдено.');
+    if (primaryField === undefined) {
+      throw new PrimaryKeyNotDefinedError({Model: target});
     }
-    return {collection, identifierField, fields};
+    return {collection, primaryField, fields};
   }
 
   /**
@@ -314,7 +330,7 @@ export class ReflectUtils {
     let hasIdentifierField = false;
 
     for (const f of fields) {
-      if (f.isIdentifier) {
+      if (f.isPrimary) {
         // Запрещено иметь сразу несколько идентификационных полей.
         if (hasIdentifierField) {
           return false;

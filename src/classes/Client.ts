@@ -1,8 +1,6 @@
 import {Db, MongoClient, MongoClientOptions} from 'mongodb';
-import {IDocument, TAnySchema, TConstructor} from '../types';
-import {Repository} from './Repository';
-import {DIUtils} from './DIUtils';
-import {ReflectUtils} from './ReflectUtils';
+import {TConstructor} from '../types';
+import {IModel, Repository, TModelCtr} from './Repository';
 
 type TAnyConstructor = TConstructor<any>;
 
@@ -54,9 +52,9 @@ export class Client {
    * Возвращает репозиторий для генерации моделей.
    * @param Model
    */
-  getRepository<ModelSchema extends TAnySchema, CollectionSchema extends IDocument>(
-    Model: TConstructor<ModelSchema>
-  ): Repository<ModelSchema, CollectionSchema> {
-    return new Repository<ModelSchema, CollectionSchema>(Model, this.db);
+  getRepository<Model extends IModel<any>>(
+    Model: TModelCtr<Model>
+  ): Repository<Model> {
+    return new Repository<Model>(Model, this.db);
   }
 }

@@ -1,7 +1,7 @@
 import {TSupportedType} from '../../types';
 import {isSupportedType} from '../../utils';
 import {ReflectUtils} from '../../classes';
-import {UnsupportedTypeError} from '../../errors';
+import {UnsupportedTypeError} from '../../errors/UnsupportedTypeError';
 
 /**
  * Возвращает валидный для нас тип поля исходя из метаданных типа поля.

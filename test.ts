@@ -1,9 +1,9 @@
 import {Client, Field, Model} from './src';
 import {ObjectId} from 'bson';
 
-@Model({collection: 'nutritionLite'})
+@Model('users')
 class User {
-  @Field({})
+  @Field({id: true})
   id: ObjectId;
 }
 

@@ -18,7 +18,7 @@ export function Field(typeOrOptions?: TAnyFieldOptions) {
     let isNullable = true;
     let dbPropertyName = propertyKey;
     let defaultValue: any;
-    let isIdentifier = false;
+    let isPrimary = false;
 
     if (typeOrOptions === undefined) {
       type = getReflectedSupportedType(target, propertyKey);
@@ -27,12 +27,12 @@ export function Field(typeOrOptions?: TAnyFieldOptions) {
         nullable = isNullable,
         name = dbPropertyName,
         defaultValue: typeDefaultValue,
-        id = isIdentifier,
+        id = isPrimary,
       } = typeOrOptions;
       dbPropertyName = name;
       defaultValue = typeDefaultValue;
       isNullable = nullable;
-      isIdentifier = id;
+      isPrimary = id;
       type = 'type' in typeOrOptions
         ? typeOrOptions.type
         : getReflectedSupportedType(target, propertyKey);
@@ -44,7 +44,7 @@ export function Field(typeOrOptions?: TAnyFieldOptions) {
       dbPropertyName,
       defaultValue,
       isNullable,
-      isIdentifier,
+      isPrimary,
       type,
     });
   }
