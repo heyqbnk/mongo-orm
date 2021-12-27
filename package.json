@@ -55,6 +55,8 @@
     "commitizen": "^4.2.4",
     "conventional-github-releaser": "^3.1.5",
     "cz-conventional-changelog": "^3.3.0",
+    "dotenv": "^10.0.0",
+    "dotenv-cli": "^4.1.1",
     "eslint": "^8.3.0",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
