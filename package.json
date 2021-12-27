@@ -1,6 +1,6 @@
 {
   "name": "mongo-orm",
-  "version": "1.1.1",
+  "version": "1.0.0",
   "repository": "git@github.com:wolframdeus/mongo-orm.git",
   "homepage": "https://github.com/wolframdeus/mongo-orm",
   "bugs": "https://github.com/wolframdeus/mongo-orm/issues",
@@ -56,6 +56,10 @@
     "conventional-github-releaser": "^3.1.5",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.3.0",
+    "gulp": "^4.0.2",
+    "gulp-clean": "^0.4.0",
+    "gulp-minify": "^3.1.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "husky": "^7.0.4",
     "install-peers-cli": "^2.2.0",
     "lint-staged": "^12.1.2",
