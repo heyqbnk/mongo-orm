@@ -1,4 +1,4 @@
-import {ObjectId} from 'bson';
+import {ObjectId} from 'mongodb';
 import {createTypeBasedDataMapper} from './utils';
 import {TKnownType} from '../types';
 import {DataMapper} from './DataMapper';
