@@ -1,18 +1,20 @@
 import {Client, Field, Model} from './src';
-import {ObjectId} from 'bson';
 
 @Model('users')
 class User {
-  @Field({id: true})
-  id: ObjectId;
+  @Field({id: true, name: '_id'})
+  id: number;
 }
 
 (async () => {
   const client = await Client.init({
     connection: {
-      uri: 'mongodb://localhost:27017',
+      uri: 'mongodb://127.0.0.1:27017',
       db: 'nutritionLite'
     },
-    models: [User],
   });
+  const userRepository = client.getRepository(User);
+  const user = await userRepository.findOne({id: 68728796});
+
+  console.log(user)
 })();

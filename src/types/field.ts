@@ -1,5 +1,5 @@
-import {TAnyFieldType, TSupportedType} from './field-type';
-import {IDataMapper} from '../data-mappers';
+import {TAnyFieldType} from './field-type';
+import {DataMapper} from '../data-mappers';
 
 export interface IFieldMeta {
   /**
@@ -39,5 +39,5 @@ export interface IUnpackedFieldMeta extends Omit<IFieldMeta, 'type'> {
   /**
    * Маппер-данных.
    */
-  dataMapper: IDataMapper<any, any>;
+  dataMapper: DataMapper<any, any>;
 }

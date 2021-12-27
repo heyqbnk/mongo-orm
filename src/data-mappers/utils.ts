@@ -1,17 +1,11 @@
-import {DataMapper as DecorateDataMapper} from '../decorators';
-import {
-  IDataMapper,
-  TBaseType,
-  TTypeBasedDataMapper,
-  TTypeBasedType,
-} from './types';
-import {ReflectUtils} from '../classes';
+import {TBaseType, TTypeBasedType} from './types';
 import {TKnownType} from '../types';
 import {
   knownTypeDataMappersTuple,
   TGetKnownTypeDataMapper,
   TGetKnownTypeDataMapperTuple,
 } from './known';
+import {DataMapper} from './DataMapper';
 
 /**
  * Создает стандартный парсер для типа, который можно получить через typeof.
@@ -19,8 +13,8 @@ import {
  */
 export function createTypeBasedDataMapper<T extends TBaseType>(
   type: T,
-): TTypeBasedDataMapper<T> {
-  return createDataMapper(
+): DataMapper<TTypeBasedType<T>, TTypeBasedType<T>> {
+  return new DataMapper(
     (value: unknown): TTypeBasedType<T> => {
       if (typeof value !== type) {
         throw new Error(`Не удалось спарсить значение для типа ${type}`);
@@ -29,23 +23,6 @@ export function createTypeBasedDataMapper<T extends TBaseType>(
     },
     value => value,
   );
-}
-
-/**
- * Создаёт новый дата-маппер.
- * @param parse
- * @param serialize
- */
-export function createDataMapper<LocalValue, DbValue>(
-  parse: (value: unknown) => LocalValue,
-  serialize: (value: LocalValue) => DbValue,
-): IDataMapper<LocalValue, DbValue> {
-  @DecorateDataMapper()
-  class DataMapper {
-    static parse = parse;
-    static serialize = serialize;
-  }
-  return DataMapper;
 }
 
 /**

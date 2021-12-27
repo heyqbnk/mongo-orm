@@ -1,26 +1,21 @@
 import {IDocument, IUnpackedFieldMeta, TConstructor} from '../types';
 import {Collection, Db, Filter, FindOptions, WithId} from 'mongodb';
 import {ReflectUtils} from './ReflectUtils';
-import {ValueEmptyError} from '../errors/ValueEmptyError';
-import {ArrayExpectedError} from '../errors/ArrayExpectedError';
+import {ArrayExpectedError, ValueEmptyError} from '../errors';
 
-export interface IModel<D extends IDocument> {
-}
-
-export type TModelCtr<M extends IModel<any>> = TConstructor<M>;
-type TModelDocument<M> = M extends IModel<infer D>
-  ? D : never;
+type TFieldNamesMapping = Record<string, string>
 
 /**
  * Класс, который работает с моделями.
  */
-export class Repository<Model extends IModel<any>> {
-  private readonly collection: Collection<TModelDocument<Model>>;
+export class Repository<Model> {
+  private readonly collection: Collection<IDocument>;
   private readonly fields: IUnpackedFieldMeta[];
+  private readonly fieldNames: TFieldNamesMapping;
   private readonly primaryField: IUnpackedFieldMeta;
 
   constructor(
-    private readonly ModelConstructor: TModelCtr<Model>,
+    private readonly ModelConstructor: TConstructor<Model>,
     db: Db,
   ) {
     // Применяем поля, которые в модели объявлены.
@@ -32,6 +27,10 @@ export class Repository<Model extends IModel<any>> {
     } = ReflectUtils.collectModelInformation(ModelConstructor);
     this.collection = db.collection(collection);
     this.fields = fields;
+    this.fieldNames = fields.reduce<TFieldNamesMapping>((acc, f) => {
+      acc[f.classPropertyName] = f.dbPropertyName;
+      return acc;
+    }, {});
     this.primaryField = primaryField;
   }
 
@@ -41,8 +40,8 @@ export class Repository<Model extends IModel<any>> {
    * @param field
    * @private
    */
-  private computeFieldValue(
-    document: WithId<TModelDocument<Model>>,
+  private static computeFieldValue(
+    document: WithId<any>,
     field: IUnpackedFieldMeta,
   ): unknown {
     const {
@@ -86,7 +85,7 @@ export class Repository<Model extends IModel<any>> {
    * @private
    * @param document
    */
-  private createModel(document: WithId<TModelDocument<Model>>): Model {
+  private createModel(document: WithId<any>): Model {
     const instance = new this.ModelConstructor;
 
     // Объявляем скрытое свойство, в которое будет записываться реальный
@@ -98,28 +97,96 @@ export class Repository<Model extends IModel<any>> {
       configurable: false,
     });
 
+    // Для каждого поля модели пытаемся вычислить значение. Если значение
+    // вычислить не удастся, будет выброшена ошибка. Назначать нам ничего нет
+    // необходимости ввиду того, что геттеры, которые привязаны к модели
+    // автоматически достанут значение из документа.
     this.fields.forEach(f => {
-      (instance as any)[f.classPropertyName] =
-        this.computeFieldValue(document, f);
+      Repository.computeFieldValue(document, f)
     });
 
     return instance;
   }
 
-  async find(): Promise<Model[]>;
-  async find(
-    filter: Filter<TModelDocument<Model>>,
+  /**
+   * Форматирует значение фильтра.
+   * @param value
+   * @private
+   */
+  private formatFilterValue(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map(f => this.formatFilterValue(value));
+    }
+    if (typeof value === 'object' && value !== null) {
+      return Object
+        .entries(value)
+        .reduce<Filter<unknown>>((acc, [key, value]) => {
+          const fieldName = this.fieldNames[key] === undefined
+            ? this.fieldNames[key]
+            : key;
+
+          acc[fieldName] = this.formatFilterValue(value);
+
+          return acc;
+        }, {});
+    }
+    return value;
+  }
+
+  /**
+   * Форматирует фильтр перед отправкой запроса.
+   * @private
+   * @param filter
+   */
+  private formatFilter(filter: Filter<Model>): Filter<unknown> {
+    return Object
+      .entries(filter)
+      .reduce<Filter<unknown>>((acc, [key, value]) => {
+        const fieldName = this.fieldNames[key] === undefined
+          ? key
+          : this.fieldNames[key];
+
+        acc[fieldName] = this.formatFilterValue(value);
+
+        return acc;
+      }, {});
+  }
+
+  find(): Promise<Model[]>;
+  find(
+    filter: Filter<Model>,
     options?: FindOptions,
   ): Promise<Model[]>;
   async find(
-    filter?: Filter<TModelDocument<Model>>,
+    filter?: Filter<Model>,
     options?: FindOptions,
   ): Promise<Model[]> {
-    // TODO: projection?
-    const entities = filter === undefined
+    const formattedFilter = filter === undefined
+      ? null
+      : this.formatFilter(filter);
+    const entities = formattedFilter === null
       ? await this.collection.find().toArray()
-      : await this.collection.find(filter, options).toArray();
+      : await this.collection.find(formattedFilter, options).toArray();
 
     return entities.map(entity => this.createModel(entity));
+  }
+
+  findOne(): Promise<Model | null>;
+  findOne(
+    filter: Filter<Model>,
+    options?: FindOptions,
+  ): Promise<Model | null>;
+  async findOne(
+    filter?: Filter<Model>,
+    options?: FindOptions,
+  ): Promise<Model | null> {
+    const formattedFilter = filter === undefined
+      ? null
+      : this.formatFilter(filter);
+    const entity = formattedFilter === null
+      ? await this.collection.findOne()
+      : await this.collection.findOne(formattedFilter, options);
+
+    return entity === null ? null : this.createModel(entity);
   }
 }

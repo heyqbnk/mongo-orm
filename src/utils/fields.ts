@@ -2,11 +2,10 @@ import {
   TSupportedType,
   TKnownType,
   IFieldMeta,
-  IUnpackedFieldMeta,
+  IUnpackedFieldMeta
 } from '../types';
 import {ObjectId} from 'mongodb';
-import {ReflectUtils} from '../classes';
-import {getKnownTypeDataMapper, IDataMapper} from '../data-mappers';
+import {DataMapper, getKnownTypeDataMapper} from '../data-mappers';
 
 /**
  * Утверждает, что переданное значение является известным типом поля.
@@ -22,11 +21,11 @@ export function isKnownType(value: unknown): value is TKnownType {
  * @param value
  */
 export function isSupportedType(value: unknown): value is TSupportedType {
-  return isKnownType(value) || ReflectUtils.isDataMapper(value);
+  return isKnownType(value) || value instanceof DataMapper;
 }
 
 /**
- * Распаковывает поле
+ * Распаковывает поле.
  * @param field
  */
 export function unpackField(field: IFieldMeta): IUnpackedFieldMeta {

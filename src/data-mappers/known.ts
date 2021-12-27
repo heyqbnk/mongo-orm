@@ -1,6 +1,7 @@
 import {ObjectId} from 'bson';
-import {createDataMapper, createTypeBasedDataMapper} from './utils';
-import {TKnownType, TString} from '../types';
+import {createTypeBasedDataMapper} from './utils';
+import {TKnownType} from '../types';
+import {DataMapper} from './DataMapper';
 
 export const NumberDataMapper = createTypeBasedDataMapper('number');
 
@@ -8,7 +9,7 @@ export const StringDataMapper = createTypeBasedDataMapper('string');
 
 export const BooleanDataMapper = createTypeBasedDataMapper('boolean');
 
-export const DateDataMapper = createDataMapper<Date, Date>(
+export const DateDataMapper = new DataMapper<Date, Date>(
   value => {
     if (!(value instanceof Date)) {
       throw new Error('Не удалось спарсить значение для типа Date');
@@ -18,7 +19,7 @@ export const DateDataMapper = createDataMapper<Date, Date>(
   value => value,
 );
 
-export const ObjectIdDataMapper = createDataMapper<ObjectId, ObjectId>(
+export const ObjectIdDataMapper = new DataMapper<ObjectId, ObjectId>(
   value => {
     if (!(value instanceof ObjectId)) {
       throw new Error('Не удалось спарсить значение для типа ObjectId');

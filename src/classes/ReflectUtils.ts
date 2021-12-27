@@ -1,11 +1,13 @@
 import 'reflect-metadata';
 import {IFieldMeta, IUnpackedFieldMeta} from '../types';
+import {
+  PropertyAlreadyDefinedError,
+  PrimaryKeyAlreadyDefinedError,
+  ModelNotFoundError,
+  EmptyFieldsListError,
+  PrimaryKeyNotDefinedError
+} from '../errors';
 import {unpackField, whileHasParentConstructor} from '../utils';
-import {PropertyAlreadyDefinedError} from '../errors/PropertyAlreadyDefinedError';
-import {PrimaryKeyAlreadyDefinedError} from '../errors/PrimaryKeyAlreadyDefinedError';
-import {ModelNotFoundError} from '../errors/ModelNotFoundError';
-import {EmptyFieldsListError} from '../errors/EnptyFieldsListError';
-import {PrimaryKeyNotDefinedError} from '../errors/PrimaryKeyNotDefinedError';
 
 enum EMetaDataKey {
   /**
@@ -20,10 +22,6 @@ enum EMetaDataKey {
    * Список полей, которые присутствуют в модели.
    */
   Fields,
-  /**
-   * Тип объекта.
-   */
-  ObjectType,
   /**
    * Список распакованных полей.
    */
@@ -48,7 +46,6 @@ interface IModelInformation {
 interface IMetaValuesMap {
   [EMetaDataKey.AreFieldsApplied]: boolean;
   [EMetaDataKey.Collection]: string;
-  [EMetaDataKey.ObjectType]: 'model' | 'data-mapper';
   [EMetaDataKey.Fields]: IFieldMeta[];
   [EMetaDataKey.UnpackedFields]: IUnpackedFieldMeta[];
 }
@@ -72,23 +69,6 @@ export class ReflectUtils {
         ? Reflect.getMetadata(key, target, propertyKey)
         : Reflect.getMetadata(key, target)
     ) || null;
-  }
-
-  /**
-   * Возвращает true в случае, если указанное значение имеет переданный
-   * мета-ключ.
-   * @param key
-   * @param target
-   * @param propertyKey
-   */
-  private static has(
-    key: TKnownMeta,
-    target: Object,
-    propertyKey?: string
-  ): boolean {
-    return typeof propertyKey === 'string'
-      ? Reflect.hasMetadata(key, target, propertyKey)
-      : Reflect.hasMetadata(key, target);
   }
 
   /**
@@ -168,7 +148,6 @@ export class ReflectUtils {
         set(value: any) {
           this.__document[f.dbPropertyName] = value;
         },
-        writable: false,
         enumerable: true,
         configurable: false,
       });
@@ -218,15 +197,6 @@ export class ReflectUtils {
    */
   static defineModel(target: Function, collection: string) {
     this.set(EMetaDataKey.Collection, collection, target);
-    this.set(EMetaDataKey.ObjectType, 'model', target);
-  }
-
-  /**
-   * Помечает значение как дата-маппер.
-   * @param target
-   */
-  static defineDataMapper(target: Function) {
-    this.set(EMetaDataKey.ObjectType, 'data-mapper', target);
   }
 
   /**
@@ -288,56 +258,15 @@ export class ReflectUtils {
   }
 
   /**
-   * Возвращает true в случае если переданное значение содержит настройки
-   * модели.
-   * @param target
-   */
-  static isModel(target: any): boolean {
-    return this.get(EMetaDataKey.ObjectType, target) === 'model';
-  }
-
-  /**
-   * Возвращает true в случае, если переданное значение является
-   * зарегистрированным дата-маппером.
-   * @param target
-   */
-  static isDataMapper(target: any): boolean {
-    return this.get(EMetaDataKey.ObjectType, target) === 'data-mapper';
-  }
-
-  /**
    * Проверяет, является ли переданное значение полноценной моделью.
    * @param target
    */
   static isCompleteModel(target: Function): boolean {
-    const meta = this.get(EMetaDataKey.ModelMeta, target);
-
-    if (meta === null) {
+    try {
+      this.collectModelInformation(target);
+      return true;
+    } catch (e) {
       return false;
     }
-    const fields: IFieldMeta[] = [];
-
-    whileHasParentConstructor(target, ctr => {
-      const ctrFields = this.get(EMetaDataKey.ModelFields, ctr);
-
-      if (ctrFields !== null) {
-        fields.push(...ctrFields);
-      }
-    });
-    if (fields.length === 0) {
-      return false;
-    }
-    let hasIdentifierField = false;
-
-    for (const f of fields) {
-      if (f.isPrimary) {
-        // Запрещено иметь сразу несколько идентификационных полей.
-        if (hasIdentifierField) {
-          return false;
-        }
-        hasIdentifierField = true;
-      }
-    }
-    return hasIdentifierField;
   }
 }

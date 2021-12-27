@@ -1,6 +1,6 @@
 import {ReflectUtils} from '../../classes';
-import {TAnyFieldOptions} from './types';
 import {getReflectedSupportedType} from './utils';
+import {TAnyFieldOptions} from './types';
 import {TAnyFieldType} from '../../types';
 
 /**
@@ -15,7 +15,7 @@ export function Field(typeOrOptions?: TAnyFieldOptions) {
     const Model = target.constructor;
 
     let type: TAnyFieldType;
-    let isNullable = true;
+    let isNullable = false;
     let dbPropertyName = propertyKey;
     let defaultValue: any;
     let isPrimary = false;

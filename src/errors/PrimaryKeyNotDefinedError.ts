@@ -1,5 +1,4 @@
 import {createError} from './utils';
-import {IFieldMeta} from '../types';
 
 interface IConProps {
   Model: Function;

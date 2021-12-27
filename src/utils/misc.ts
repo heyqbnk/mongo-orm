@@ -10,8 +10,8 @@ export function whileHasParentConstructor(
 ) {
   let currentTarget = target;
 
-  while (currentTarget !== null && currentTarget !== undefined) {
+  while (currentTarget !== Function) {
     f(currentTarget);
-    currentTarget = (target as any).__proto__;
+    currentTarget = currentTarget.constructor
   }
 }

@@ -1,17 +1,34 @@
 {
   "name": "mongo-orm",
   "version": "1.0.0",
-  "main": "index.js",
   "repository": "git@github.com:wolframdeus/mongo-orm.git",
+  "homepage": "https://github.com/wolframdeus/mongo-orm",
+  "bugs": "https://github.com/wolframdeus/mongo-orm/issues",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "author": "Vladislav Kibenko <wolfram.deus@gmail.com>",
   "license": "MIT",
   "files": [
     "dist/**/*"
   ],
+  "keywords": [
+    "mongodb",
+    "mongo",
+    "orm",
+    "typescript"
+  ],
   "scripts": {
-    "build": "rimraf dist && tsc",
-    "test": "tsc --noEmit",
-    "dev": "ts-node-dev --transpile-only test.ts"
+    "build": "gulp",
+    "commit": "git-cz",
+    "dev": "ts-node-dev --transpile-only test.ts",
+    "lint": "eslint src/**",
+    "prepare": "install-peers",
+    "postrelease": "npm-run-all release:*",
+    "prepublishOnly": "yarn build",
+    "release:tags": "git push --follow-tags origin master & yarn publish --non-interactive",
+    "release:github": "dotenv -e .env -- conventional-github-releaser -p eslint",
+    "release": "standard-version -a",
+    "test": "tsc --noEmit"
   },
   "config": {
     "commitizen": {
@@ -40,11 +57,12 @@
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.3.0",
     "husky": "^7.0.4",
+    "install-peers-cli": "^2.2.0",
     "lint-staged": "^12.1.2",
     "rimraf": "^3.0.2",
     "standard-version": "^9.3.2",
     "ts-node-dev": "^1.1.8",
-    "typescript": "^4.5.2"
+    "typescript": "^4.4.0"
   },
   "peerDependencies": {
     "bson": "^4.6.0",

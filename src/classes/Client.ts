@@ -1,8 +1,6 @@
 import {Db, MongoClient, MongoClientOptions} from 'mongodb';
+import {Repository} from './Repository';
 import {TConstructor} from '../types';
-import {IModel, Repository, TModelCtr} from './Repository';
-
-type TAnyConstructor = TConstructor<any>;
 
 interface IConProps {
   /**
@@ -17,7 +15,6 @@ interface IInitOptions {
     db: string;
     options?: MongoClientOptions;
   };
-  models: TAnyConstructor[];
 }
 
 /**
@@ -37,9 +34,7 @@ export class Client {
    * @param options
    */
   static async init(options: IInitOptions): Promise<Client> {
-    const {
-      connection: {uri, options: clientOptions, db}
-    } = options;
+    const {connection: {uri, options: clientOptions, db}} = options;
 
     // Создаем и сразу подключаем MongoDB Client.
     const mongoClient = await new MongoClient(uri, clientOptions).connect();
@@ -52,9 +47,7 @@ export class Client {
    * Возвращает репозиторий для генерации моделей.
    * @param Model
    */
-  getRepository<Model extends IModel<any>>(
-    Model: TModelCtr<Model>
-  ): Repository<Model> {
+  getRepository<Model>(Model: TConstructor<Model>): Repository<Model> {
     return new Repository<Model>(Model, this.db);
   }
 }

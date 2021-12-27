@@ -1,11 +1,8 @@
-/**
- * Любая схема документа.
- */
-export type TAnySchema = Record<string, any>;
+import {ObjectId} from 'mongodb';
 
 /**
  * Стандартный документ MongoDB.
  */
-export interface IDocument {
-  _id: any;
+export interface IDocument<Id = ObjectId> {
+  _id: Id;
 }

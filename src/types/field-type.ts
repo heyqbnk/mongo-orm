@@ -1,8 +1,8 @@
 import {ObjectId} from 'mongodb';
-import {IParser} from './parser';
 import {TTypeOrTupleOrCallback} from './utils';
+import {DataMapper} from '../data-mappers';
 
-type TAnyDataMapper = IParser<any, any>;
+type TAnyDataMapper = DataMapper<any, any>;
 
 export type TString = typeof String;
 export type TNumber = typeof Number;
