@@ -4,9 +4,13 @@ import {TConstructor} from '../types';
 
 interface IConProps {
   /**
-   * Экземпляр Db при помощи которого можно работать с коллекциями.
+   * Клиент MongoDB.
    */
-  db: Db;
+  client: MongoClient;
+  /**
+   * Наименование БД.
+   */
+  dbName: string;
 }
 
 interface IInitOptions {
@@ -24,9 +28,15 @@ interface IInitOptions {
 export class Client {
   private readonly db: Db;
 
+  /**
+   * Созданный клиент MongoDB.
+   */
+  client: MongoClient;
+
   private constructor(props: IConProps) {
-    const {db} = props;
-    this.db = db;
+    const {client, dbName} = props;
+    this.client = client;
+    this.db = client.db(dbName);
   }
 
   /**
@@ -37,10 +47,10 @@ export class Client {
     const {connection: {uri, options: clientOptions, db}} = options;
 
     // Создаем и сразу подключаем MongoDB Client.
-    const mongoClient = await new MongoClient(uri, clientOptions).connect();
+    const client = await new MongoClient(uri, clientOptions).connect();
 
     // Создаем клиент.
-    return new Client({db: mongoClient.db(db)});
+    return new Client({client, dbName: db});
   }
 
   /**
