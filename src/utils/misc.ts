@@ -1,6 +1,5 @@
 /**
- * Рекурсивно получает расширяемый класс и вызывает функцию с каждым из них
- * включая сам переданный класс.
+ * Recursively gets extended class and calls passed function with each of them.
  * @param target
  * @param f
  */

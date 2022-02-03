@@ -20,7 +20,7 @@
   "scripts": {
     "build": "gulp",
     "commit": "git-cz",
-    "dev": "ts-node-dev --transpile-only test.ts",
+    "dev": "ts-node-dev --transpile-only test/test.ts",
     "lint": "eslint src/**",
     "prepare": "install-peers",
     "postrelease": "npm-run-all release:*",
@@ -28,7 +28,8 @@
     "release:tags": "git push --follow-tags origin master & yarn publish --non-interactive",
     "release:github": "dotenv -e .env -- conventional-github-releaser -p eslint",
     "release": "standard-version -a",
-    "test": "tsc --noEmit"
+    "test": "tsc --noEmit",
+    "test:schema": "ts-node-dev --transpile-only example/schema.ts"
   },
   "config": {
     "commitizen": {
@@ -74,5 +75,6 @@
   "peerDependencies": {
     "mongodb": "^4.2.1",
     "reflect-metadata": "^0.1.13"
-  }
+  },
+  "dependencies": {}
 }
