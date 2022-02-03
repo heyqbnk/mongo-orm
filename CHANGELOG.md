@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/wolframdeus/mongo-orm/compare/v1.2.1...v1.3.0) (2022-02-03)
+
+
+### Features
+
+* **release:** initial release ([74a71a9](https://github.com/wolframdeus/mongo-orm/commit/74a71a9b09eff54d16b0fe53f5d41cd47c366d44))
+
 ### [1.2.1](https://github.com/wolframdeus/mongo-orm/compare/v1.2.0...v1.2.1) (2021-12-27)
 
 
